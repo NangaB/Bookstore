@@ -9,6 +9,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.ModelAndView;
 
 import javax.validation.Valid;
 import javax.validation.constraints.DecimalMin;
@@ -20,13 +21,20 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/catalog")
+@RequestMapping()
 @AllArgsConstructor
 public class CatalogController {
 
     private final CatalogUseCase catalog;
 
-    @GetMapping
+    @GetMapping()
+    public ModelAndView start(){
+        ModelAndView modelAndView = new ModelAndView();
+        modelAndView.setViewName("start.html");
+        return modelAndView;
+    }
+
+    @GetMapping("/catalog")
     @ResponseStatus(HttpStatus.OK)
     public List<Book> getAll(@RequestParam Optional<String> title,
                              @RequestParam Optional<String> author){
@@ -41,40 +49,40 @@ public class CatalogController {
         }
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/catalog/{id}")
     public ResponseEntity<Book> getById(@PathVariable Long id){
         return catalog.findById(id)
                 .map(body -> ResponseEntity.ok(body))
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PostMapping()
+    @PostMapping("/catalog")
     @ResponseStatus(HttpStatus.CREATED)
     public Book addBook(@Valid @RequestBody CatalogController.RestBookCommand command){
         Book book = catalog.addBook(command.toCommand());
         return book;
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/catalog/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteById(@PathVariable Long id){
         catalog.removeById(id);
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("catalog/{id}")
     @ResponseStatus(HttpStatus.ACCEPTED)
     public void updateBook(@PathVariable Long id, @Valid @RequestBody RestBookCommand command){
         catalog.updateBook(command.toUpdateCommand(id));
     }
 
-    @PutMapping(value = "/{id}/cover", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
+    @PutMapping(value = "/catalog/{id}/cover", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     @ResponseStatus(HttpStatus.ACCEPTED)
     public void addBookCover(@PathVariable Long id, @RequestParam("file") MultipartFile file) throws IOException {
         System.out.println("Got file: " + file.getOriginalFilename());
         catalog.updateBookCover(new CatalogUseCase.UpdateBookCoverCommand(id, file.getBytes(), file.getContentType(), file.getOriginalFilename()));
     }
 
-    @DeleteMapping("{id}/cover")
+    @DeleteMapping("/catalog/{id}/cover")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteBookCover(@PathVariable Long id){
         catalog.removeBookCover(id);
